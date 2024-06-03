@@ -7,15 +7,14 @@ app.use(bodyParser.json())
 
 const students = [];
 
-app.post('/students', (req, res)=>{
-    students.push(req.body)
-    res.json(students);
-});
-
 app.get('/students',(req,res)=>{
     res.json(students);
 });
 
+app.post('/students', (req, res)=>{
+    students.push(req.body)
+    res.json(students);
+});
 app.get('/students/:id',(req,res)=>{
     const id = Number(req.params.id);
     const student = students.find(s => s.id === id);
