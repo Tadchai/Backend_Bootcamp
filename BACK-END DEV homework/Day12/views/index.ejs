@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+
+    <link href="/css/index.css" rel="stylesheet" />
+
+    <title>Login</title>
+  </head>
+  <body>
+    <div class="login">
+      <img
+        src="/img/368258467_358922193198158_3525902512512454184_n.jpg"
+        alt="login image"
+        class="login__img"
+      />
+      <form class="login__form" action="/login" method="post">
+        <h1 class="login__title">Login</h1>
+        <div class="login__content">
+          <div class="login__box">
+            <i class="ri-user-3-line login__icon"></i>
+            <div class="login__box-input">
+              <input
+                type="username"
+                required
+                class="login__input"
+                placeholder=" "
+                id="username"
+                name="username"
+              />
+              <label for="username" class="login__label">Username</label>
+            </div>
+          </div>
+        </div>
+        <div class="login__content">
+          <div class="login__box">
+            <i class="ri-lock-2-line login__icon"></i>
+            <div class="login__box-input">
+              <input
+                type="password"
+                required
+                class="login__input"
+                id="login-pass"
+                placeholder=" "
+                id="password"
+                name="password"
+              />
+              <label for="password" class="login__label">Password</label>
+              <i class="ri-eye-off-line login__eye" id="login-eye"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="login__check">
+          <div class="login__check-group">
+            <input type="checkbox" class="login__check-input" />
+            <label for="" class="login__check-label">Remember me</label>
+          </div>
+
+          <a href="#" class="login__forgot">Forgot Password?</a>
+        </div>
+        <button class="login__button" type="submit">Login</button>
+        <p class="login__register">
+          Don't have an account? <a href="/register">Register</a>
+        </p>
+        <div class="login__admin">
+          <i class="ri-admin-line"></i>
+          <a href="#">Admin</a>
+        </div>
+      </form>
+    </div>
+    <script>
+      //show hidden pass
+      const eyeIcon = document.querySelector("#login-eye");
+      const passwordEl = document.querySelector("#login-pass");
+
+      eyeIcon.addEventListener("click", () => {
+        if (eyeIcon.classList.contains("fa-eye-slash")) {
+          eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
+          passwordEl.setAttribute("type", "password");
+        } else {
+          eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
+          passwordEl.setAttribute("type", "text");
+        }
+      });
+    </script>
+  </body>
+</html>
