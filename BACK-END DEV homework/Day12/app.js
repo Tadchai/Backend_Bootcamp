@@ -6,12 +6,14 @@ const ejs = require('ejs');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const path = require('path');
+const dotenv =require('dotenv');
+dotenv.config();
 
 const app = express();
 const port = 3000;
 
 // เชื่อมต่อ MongoDB
-mongoose.connect('mongodb://localhost:27017/PROJECT');
+mongoose.connect(process.env.DB_mongo);
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: false }));
