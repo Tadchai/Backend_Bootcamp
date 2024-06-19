@@ -18,7 +18,6 @@ mongoose.connect(process.env.DB_mongo);
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: false }));
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ตั้งค่า session
@@ -60,19 +59,6 @@ passport.use(new LocalStrategy(async function(username, password, done) {
   }
 }));
 
-passport.serializeUser(function(user, done) {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async function(id, done) {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (err) {
-    done(err);
-  }
-});
-
 // ตั้งค่า Google OAuth 2.0 Strategy
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
@@ -94,6 +80,18 @@ passport.use(new GoogleStrategy({
   }
 }));
 
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async function(id, done) {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
+});
 
 // เส้นทาง
 app.get('/', (req, res) => {

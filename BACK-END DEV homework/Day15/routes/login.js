@@ -3,9 +3,11 @@ const router = express.Router();
 
 const {
     LoginSignup,
-    LoginSignin
+    LoginSignin,
+
   } =require("../controllers/login");
   router.post("/signup", LoginSignup);
   router.post("/signin", LoginSignin);
+  
 
 module.exports = router;

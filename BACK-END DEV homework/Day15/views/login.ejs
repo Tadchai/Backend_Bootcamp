@@ -7,9 +7,7 @@
       href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css"
       rel="stylesheet"
     />
-
     <link href="/css/login.css" rel="stylesheet" />
-
     <title>Login</title>
   </head>
   <body>
@@ -19,14 +17,14 @@
         alt="login image"
         class="login__img"
       />
-      <form class="login__form" action="/login/signin" method="post">
+      <form class="login__form" id="login-form" action="/login/signin" method="post">
         <h1 class="login__title">Login</h1>
         <div class="login__content">
           <div class="login__box">
             <i class="ri-user-3-line login__icon"></i>
             <div class="login__box-input">
               <input
-                type="username"
+                type="text"
                 required
                 class="login__input"
                 placeholder=" "
@@ -45,7 +43,6 @@
                 type="password"
                 required
                 class="login__input"
-                id="login-pass"
                 placeholder=" "
                 id="password"
                 name="password"
@@ -65,7 +62,7 @@
           <a href="#" class="login__forgot">Forgot Password?</a>
         </div>
         <button class="login__button" type="submit">Login</button>
-        <a class="button_google" href="/auth/google">Sign in with Google</a>
+        <a class="button_google" href="/loginOauth/google">Sign in with Google</a>
         <p class="login__register">
           Don't have an account? <a href="/register">Register</a>
         </p>
@@ -76,17 +73,50 @@
       </form>
     </div>
     <script>
-      //show hidden pass
+      // show hidden pass
       const eyeIcon = document.querySelector("#login-eye");
-      const passwordEl = document.querySelector("#login-pass");
+      const passwordEl = document.querySelector("#password");
 
       eyeIcon.addEventListener("click", () => {
-        if (eyeIcon.classList.contains("fa-eye-slash")) {
-          eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
-          passwordEl.setAttribute("type", "password");
-        } else {
-          eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
+        if (eyeIcon.classList.contains("ri-eye-off-line")) {
+          eyeIcon.classList.replace("ri-eye-off-line", "ri-eye-line");
           passwordEl.setAttribute("type", "text");
+        } else {
+          eyeIcon.classList.replace("ri-eye-line", "ri-eye-off-line");
+          passwordEl.setAttribute("type", "password");
+        }
+      });
+
+      // handle login form submission
+      document.getElementById('login-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+          const response = await fetch('/login/signin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // เก็บ token ใน localStorage
+            localStorage.setItem('token', data.token);
+
+            // เปลี่ยนหน้าไปยังหน้าหลัก
+            window.location.href = '/home';
+          } else {
+            alert(data.message);
+          }
+        } catch (error) {
+          console.error('Error logging in:', error);
+          alert('มีข้อผิดพลาดในการเข้าสู่ระบบ');
         }
       });
     </script>
