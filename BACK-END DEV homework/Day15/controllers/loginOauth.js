@@ -1,5 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
 const db = require("../db");
 const { Sequelize, DataTypes } = require('sequelize');
 // const dotenv = require('dotenv');
@@ -16,8 +17,9 @@ const User = sequelize.define('User', {
     Username: { type: DataTypes.STRING, allowNull: false },
     Password: { type: DataTypes.STRING, allowNull: true },
     Email: { type: DataTypes.STRING, allowNull: false, unique: true },
-    Role: { type: DataTypes.STRING, allowNull: true, defaultValue: 'student'  },
-    googleId: { type: DataTypes.STRING, allowNull: false, unique: true }
+    Role: { type: DataTypes.STRING, allowNull: false, defaultValue: 'student' },
+    googleId: { type: DataTypes.STRING, allowNull: true, unique: true },
+    facebookId: { type: DataTypes.STRING, allowNull: true, unique: true }
 }, {
     timestamps: false,
     tableName: 'Users'
@@ -39,6 +41,23 @@ exports.AuthGoogle = (req, res, next) => {
       });
     })(req, res, next);
   };
+
+// เส้นทางสำหรับเริ่มต้นการล็อกอินด้วย Facebook
+exports.AuthFacebook = (req, res, next) => {
+    passport.authenticate('facebook', { scope: ['email'] })(req, res, next);
+};
+
+// เส้นทางสำหรับการเรียกกลับหลังจากล็อกอินสำเร็จ
+exports.AuthFacebookCallback = (req, res, next) => {
+    passport.authenticate('facebook', { failureRedirect: '/' }, (err, user, info) => {
+      if (err) { return next(err); }
+      if (!user) { return res.redirect('/'); }
+      req.logIn(user, function(err) {
+        if (err) { return next(err); }
+        return res.redirect('/home');
+      });
+    })(req, res, next);
+};
 
     // ตั้งค่า Passport Strategy สำหรับ Google OAuth
     passport.use(new GoogleStrategy({
@@ -70,6 +89,37 @@ exports.AuthGoogle = (req, res, next) => {
             done(error, null);
         }
     }));
+
+// ตั้งค่า Passport Strategy สำหรับ Facebook OAuth
+passport.use(new FacebookStrategy({
+    clientID: process.env.FACEBOOK_APP_ID,
+    clientSecret: process.env.FACEBOOK_APP_SECRET,
+    callbackURL: 'http://localhost:3000/loginOauth/facebook/callback',
+    profileFields: ['id', 'displayName', 'emails']
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        let email = profile.emails && profile.emails[0] && profile.emails[0].value;
+        if (!email) {
+            console.error("No email found in Facebook profile");
+            return done(new Error("No email associated with this Facebook account"));
+        }
+
+        let user = await User.findOne({ where: { facebookId: profile.id } });
+        if (user) {
+            done(null, user);
+        } else {
+            user = await User.create({
+                Username: profile.displayName,
+                Email: email,
+                facebookId: profile.id
+            });
+            done(null, user);
+        }
+    } catch (error) {
+        done(error, null);
+    }
+}));
+
 
 // Serialize และ Deserialize User
 passport.serializeUser((user, done) => {
