@@ -152,7 +152,7 @@ img{
     width: 100%;
     padding: 0.25rem;
     border-radius: 0.5rem;
-    background-color: white;
+    background-color: rosybrown;
     color: var(--white-color);
     font-weight: var(--font-medium);
     cursor: pointer;
