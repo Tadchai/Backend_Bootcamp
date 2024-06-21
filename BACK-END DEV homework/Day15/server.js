@@ -10,6 +10,7 @@ const indexRouter = require("./routes/index.js")
 const loginRouter = require("./routes/login.js")
 const loginOauthRouter = require("./routes/loginOauth.js")
 const productsRouter = require("./routes/products");
+const repasswordRouter = require("./routes/repassword")
 const { swaggerUi, swaggerSpec } = require("./swagger.js");
 
 dotenv.config();
@@ -28,8 +29,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); //แก้undefinedได้
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+app.use("/repass", repasswordRouter);
 app.use("/", indexRouter);
 app.use("/products", productsRouter);
 app.use("/login", loginRouter);
