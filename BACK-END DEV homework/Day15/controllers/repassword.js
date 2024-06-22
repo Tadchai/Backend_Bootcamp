@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 const speakeasy = require('speakeasy');
+const bcrypt = require('bcrypt');
+const db = require("../db");
 const otpSecrets = {};
 
 // Send OTP by Email
@@ -84,25 +86,39 @@ exports.SendOTP = async (req, res) =>{
 
 // New Password 
 exports.NewPassword = async (req, res) => {
-    const { newPassword, confirmPassword } = req.body;
-    const username = Number(req.params.username);
-    const sql =
-      "UPDATE Users SET Password = ? WHERE username = ?";
-    db.query(
-      sql,
-      [
-        Users.Password,
-        username,
-      ],
-      (err, result) => {
-        if (err) {
-          res.status(500).json({
-            message: "Error occurred while updating product.",
-            error: err,
-          });
-        } else {
-          res.status(200).json({ message: "Product updated successfully." });
-        }
-      }
-    );
-  };
+    const { newPassword, confirmPassword, username } = req.body;
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords don't match" });
+    }
+
+    try {
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const name = username;
+        const sql = "UPDATE users SET password = ? WHERE username = ?";
+        db.query(
+            sql,
+            [hashedPassword, name],
+            (err, result) => {
+                if (err) {
+                    return res.status(500).json({
+                        message: "Error occurred while updating password.",
+                        error: err,
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.status(404).json({ message: `User not found. ${username}${newPassword}${confirmPassword}` });
+                }
+
+                res.status(200).json({ message: "Password updated successfully." });
+            }
+        );
+    } catch (error) {
+
+        res.status(500).json({
+            message: "Error occurred while processing the request.",
+            error: error,
+        });
+    }
+};
