@@ -5,7 +5,7 @@ const {
     LoginSignup,
     LoginSignin,
 
-  } =require("../controllers/Login");
+  } =require("../controllers/login");
   router.post("/signup", LoginSignup);
   router.post("/signin", LoginSignin);
   
