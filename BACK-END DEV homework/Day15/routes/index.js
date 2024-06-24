@@ -20,7 +20,10 @@ router.get('/repassword', (req,res) =>{
 router.get('/newpassword', (req,res) =>{
   res.render('newpassword.ejs');
 })
-    
+
+router.get('/product', (req,res) =>{
+  res.render('product.ejs');
+})
 
 
 module.exports = router;

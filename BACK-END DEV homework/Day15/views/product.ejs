@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management</title>
+    <link href="/css/product.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <h1>Product Management</h1>
+        <form id="product-form">
+            <input type="text" id="name" placeholder="Product Name" required>
+            <input type="number" id="price" placeholder="Product Price" required>
+            <button type="submit">Add Product</button>
+        </form>
+        <ul id="product-list"></ul>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const app = document.getElementById('app');
+            const productList = document.getElementById('product-list');
+            const productForm = document.getElementById('product-form');
+        
+            fetch('/products')
+                .then(response => response.json())
+                .then(data => {
+                    products = data;
+                    renderProducts();
+                });
+        
+            let products = [];
+        
+            productForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+        
+                const name = document.getElementById('name').value;
+                const price = document.getElementById('price').value;
+        
+                const product = { name, price };
+        
+                fetch('/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(product),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    products.push(data);
+                    renderProducts();
+                    productForm.reset();
+                });
+            });
+        
+            function renderProducts() {
+                productList.innerHTML = '';
+                products.forEach(product => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        ${product.name} - ${product.price} 
+                        <button data-id="${product.id}" class="edit-btn">Edit</button>
+                        <button data-id="${product.id}" class="delete-btn">Delete</button>
+                    `;
+                    productList.appendChild(li);
+                });
+        
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
+                        const product = products.find(p => p.id == id);
+                        document.getElementById('name').value = product.name;
+                        document.getElementById('price').value = product.price;
+                        fetch(`/products/${id}`, { method: 'DELETE' });
+                        products = products.filter(p => p.id != id);
+                        renderProducts();
+                    });
+                });
+        
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.getAttribute('data-id');
+                        fetch(`/products/${id}`, { method: 'DELETE' });
+                        products = products.filter(p => p.id != id);
+                        renderProducts();
+                    });
+                });
+            }
+        });        
+
+    </script>
+</body>
+</html>
