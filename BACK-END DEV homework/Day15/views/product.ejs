@@ -12,6 +12,8 @@
         <form id="product-form">
             <input type="text" id="name" placeholder="Product Name" required>
             <input type="number" id="price" placeholder="Product Price" required>
+            <input type="text" id="description" placeholder="Product Description" required>
+            <input type="number" id="quantity" placeholder="Product Quantity" required>
             <button type="submit">Add Product</button>
         </form>
         <ul id="product-list"></ul>
@@ -36,8 +38,10 @@
         
                 const name = document.getElementById('name').value;
                 const price = document.getElementById('price').value;
+                const description = document.getElementById('description').value;
+                const quantity = document.getElementById('quantity').value;
         
-                const product = { name, price };
+                const product = { name, price, description, quantity };
         
                 fetch('/products', {
                     method: 'POST',
@@ -59,7 +63,8 @@
                 products.forEach(product => {
                     const li = document.createElement('li');
                     li.innerHTML = `
-                        ${product.name} - ${product.price} 
+                        ${product.name} - ${product.price} - ${product.quantity}  </br>
+                        ${product.description}
                         <button data-id="${product.id}" class="edit-btn">Edit</button>
                         <button data-id="${product.id}" class="delete-btn">Delete</button>
                     `;
@@ -72,6 +77,8 @@
                         const product = products.find(p => p.id == id);
                         document.getElementById('name').value = product.name;
                         document.getElementById('price').value = product.price;
+                        document.getElementById('quantity').value = product.quantity;
+                        document.getElementById('description').value = product.description;
                         fetch(`/products/${id}`, { method: 'DELETE' });
                         products = products.filter(p => p.id != id);
                         renderProducts();
