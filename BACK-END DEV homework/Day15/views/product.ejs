@@ -8,32 +8,32 @@
   </head>
   <body>
     <div id="app">
-      <h1>Product Management</h1>
-      <form id="product-form">
-        <input type="text" id="name" placeholder="Product Name" required />
-        <input type="number" id="price" placeholder="Product Price" required />
-        <input
-          type="text"
-          id="description"
-          placeholder="Product Description"
-          required
-        />
-        <input
-          type="number"
-          id="quantity"
-          placeholder="Product Quantity"
-          required
-        />
-        <button type="submit">Add Product</button>
-      </form>
-      <button id="view-cart-btn">View Cart</button>
-      <ul id="product-list"></ul>
-      <div id="cart" class="hidden">
-        <h2>Cart</h2>
-        <ul id="cart-list"></ul>
-        <button id="close-cart-btn">Close Cart</button>
+        
+        <div class="container">
+            
+          <div id="product-form-container">
+            <h1>Product Management</h1>
+            <form id="product-form">
+              <input type="text" id="name" placeholder="Product Name" required />
+              <input type="number" id="price" placeholder="Product Price" required />
+              <input type="text" id="description" placeholder="Product Description" required />
+              <input type="number" id="quantity" placeholder="Product Quantity" required />
+              <button type="submit">Add Product</button>
+            </form>
+          </div><br>
+          
+          <div id="product-list-container">
+            <h1>All Product</h1>
+            <button id="view-cart-btn">View Cart</button>
+            <ul id="product-list"></ul>
+          </div>
+          <div id="cart" class="hidden">
+            <h2>Cart</h2>
+            <ul id="cart-list"></ul>
+            <button id="close-cart-btn">Close Cart</button>
+          </div>
+        </div>
       </div>
-    </div>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const app = document.getElementById("app");
@@ -44,25 +44,104 @@
         const viewCartBtn = document.getElementById("view-cart-btn");
         const closeCartBtn = document.getElementById("close-cart-btn");
 
-        let products = [];
-        //let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
-        let cartItems = [];
+        let products = loadProductsFromSessionStorage();
+        let cartItems = JSON.parse(sessionStorage.getItem("cartItems")) || [];
 
-        fetch("/products")
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
-          })
-          .then((data) => {
-            products = data;
-            renderProducts();
-          })
-          .catch((error) => {
-            console.error("Error fetching products:", error);
+        // Function to save products to SessionStorage
+        function saveProductsToSessionStorage(products) {
+          sessionStorage.setItem("products", JSON.stringify(products));
+        }
+
+        // Function to load products from SessionStorage
+        function loadProductsFromSessionStorage() {
+          const products = sessionStorage.getItem("products");
+          return products ? JSON.parse(products) : [];
+        }
+
+        function renderProducts() {
+          productList.innerHTML = "";
+          products.forEach((product) => {
+            let li = document.createElement("li");
+            li.innerHTML = `
+                        ${product.Product_Name} - ฿${product.Price} </br>
+                        ${product.Quantity} pieces available </br>
+                        Description </br>
+                        ${product.Description}
+                        <button data-id="${product.Product_ID}" class="edit-btn">Edit</button>
+                        <button data-id="${product.Product_ID}" class="delete-btn">Delete</button>
+                        <button data-id="${product.Product_ID}" class="add-to-cart-btn">Add to Cart</button>
+                    `;
+            productList.appendChild(li);
           });
 
+          document.querySelectorAll(".edit-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              const product = products.find((p) => p.Product_ID == id);
+              document.getElementById("name").value = product.Product_Name;
+              document.getElementById("price").value = product.Price;
+              document.getElementById("quantity").value = product.Quantity;
+              document.getElementById("description").value = product.Description;
+              fetch(`/products/${id}`, { method: "DELETE" });
+              products = products.filter((p) => p.Product_ID != id);
+              saveProductsToSessionStorage(products); // Save to SessionStorage
+              renderProducts();
+            });
+          });
+
+          document.querySelectorAll(".delete-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              fetch(`/products/${id}`, { method: "DELETE" });
+              products = products.filter((p) => p.Product_ID != id);
+              saveProductsToSessionStorage(products); // Save to SessionStorage
+              renderProducts();
+            });
+          });
+
+          document.querySelectorAll(".add-to-cart-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              const product = products.find((p) => p.Product_ID == id);
+              cartItems.push(product);
+              sessionStorage.setItem("cartItems", JSON.stringify(cartItems));
+              renderCart();
+            });
+          });
+        }
+
+        function renderCart() {
+          cartList.innerHTML = "";
+          cartItems.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = `${item.Product_Name} - ${item.Price}`;
+            cartList.appendChild(li);
+          });
+        }
+
+        // Fetch products from server if not found in SessionStorage
+        if (products.length === 0) {
+          fetch("/products")
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log(data); // ตรวจสอบข้อมูลที่ได้รับจากเซิร์ฟเวอร์
+              products = data;
+              saveProductsToSessionStorage(products); // Save to SessionStorage
+              renderProducts();
+            })
+            .catch((error) => {
+              console.error("Error fetching products:", error);
+            });
+        } else {
+          renderProducts();
+        }
+
+        // Product Form 
         productForm.addEventListener("submit", function (e) {
           e.preventDefault();
 
@@ -71,7 +150,12 @@
           const description = document.getElementById("description").value;
           const quantity = document.getElementById("quantity").value;
 
-          const product = { name, price, description, quantity };
+          const product = {
+            Product_Name: name,
+            Price: price,
+            Description: description,
+            Quantity: quantity,
+          };
 
           fetch("/products", {
             method: "POST",
@@ -88,6 +172,7 @@
             })
             .then((data) => {
               products.push(data);
+              saveProductsToSessionStorage(products); // Save to SessionStorage
               renderProducts();
               productForm.reset();
             })
@@ -104,63 +189,6 @@
         closeCartBtn.addEventListener("click", function () {
           cart.classList.add("hidden");
         });
-
-        function renderProducts() {
-          productList.innerHTML = "";
-          products.forEach((product) => {
-            const li = document.createElement("li");
-            li.innerHTML = `
-                        ${product.name} - ${product.price} - ${product.quantity}  </br>
-                        ${product.description}
-                        <button data-id="${product.id}" class="edit-btn">Edit</button>
-                        <button data-id="${product.id}" class="delete-btn">Delete</button>
-                        <button data-id="${product.id}" class="add-to-cart-btn">Add to Cart</button>
-                    `;
-            productList.appendChild(li);
-          });
-
-          document.querySelectorAll(".edit-btn").forEach((btn) => {
-            btn.addEventListener("click", function () {
-              const id = this.getAttribute("data-id");
-              const product = products.find((p) => p.id == id);
-              document.getElementById("name").value = product.name;
-              document.getElementById("price").value = product.price;
-              document.getElementById("quantity").value = product.quantity;
-              document.getElementById("description").value =
-                product.description;
-              fetch(`/products/${id}`, { method: "DELETE" });
-              products = products.filter((p) => p.id != id);
-              renderProducts();
-            });
-          });
-
-          document.querySelectorAll(".delete-btn").forEach((btn) => {
-            btn.addEventListener("click", function () {
-              const id = this.getAttribute("data-id");
-              fetch(`/products/${id}`, { method: "DELETE" });
-              products = products.filter((p) => p.id != id);
-              renderProducts();
-            });
-          });
-
-          document.querySelectorAll(".add-to-cart-btn").forEach((btn) => {
-            btn.addEventListener("click", function () {
-              const id = this.getAttribute("data-id");
-              const product = products.find((p) => p.id == id);
-              cartItems.push(product);
-              renderCart();
-            });
-          });
-        }
-
-        function renderCart() {
-          cartList.innerHTML = "";
-          cartItems.forEach((item) => {
-            const li = document.createElement("li");
-            li.textContent = `${item.name} - ${item.price}`;
-            cartList.appendChild(li);
-          });
-        }
       });
     </script>
   </body>
