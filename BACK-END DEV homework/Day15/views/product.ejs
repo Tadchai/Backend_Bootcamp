@@ -1,101 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Product Management</title>
-    <link href="/css/product.css" rel="stylesheet">
-</head>
-<body>
+    <link href="/css/product.css" rel="stylesheet" />
+  </head>
+  <body>
     <div id="app">
-        <h1>Product Management</h1>
-        <form id="product-form">
-            <input type="text" id="name" placeholder="Product Name" required>
-            <input type="number" id="price" placeholder="Product Price" required>
-            <input type="text" id="description" placeholder="Product Description" required>
-            <input type="number" id="quantity" placeholder="Product Quantity" required>
-            <button type="submit">Add Product</button>
-        </form>
-        <ul id="product-list"></ul>
+      <h1>Product Management</h1>
+      <form id="product-form">
+        <input type="text" id="name" placeholder="Product Name" required />
+        <input type="number" id="price" placeholder="Product Price" required />
+        <input
+          type="text"
+          id="description"
+          placeholder="Product Description"
+          required
+        />
+        <input
+          type="number"
+          id="quantity"
+          placeholder="Product Quantity"
+          required
+        />
+        <button type="submit">Add Product</button>
+      </form>
+      <button id="view-cart-btn">View Cart</button>
+      <ul id="product-list"></ul>
+      <div id="cart" class="hidden">
+        <h2>Cart</h2>
+        <ul id="cart-list"></ul>
+        <button id="close-cart-btn">Close Cart</button>
+      </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const app = document.getElementById('app');
-            const productList = document.getElementById('product-list');
-            const productForm = document.getElementById('product-form');
-        
-            fetch('/products')
-                .then(response => response.json())
-                .then(data => {
-                    products = data;
-                    renderProducts();
-                });
-        
-            let products = [];
-        
-            productForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-        
-                const name = document.getElementById('name').value;
-                const price = document.getElementById('price').value;
-                const description = document.getElementById('description').value;
-                const quantity = document.getElementById('quantity').value;
-        
-                const product = { name, price, description, quantity };
-        
-                fetch('/products', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(product),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    products.push(data);
-                    renderProducts();
-                    productForm.reset();
-                });
+      document.addEventListener("DOMContentLoaded", function () {
+        const app = document.getElementById("app");
+        const productList = document.getElementById("product-list");
+        const productForm = document.getElementById("product-form");
+        const cart = document.getElementById("cart");
+        const cartList = document.getElementById("cart-list");
+        const viewCartBtn = document.getElementById("view-cart-btn");
+        const closeCartBtn = document.getElementById("close-cart-btn");
+
+        let products = [];
+        //let cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+        let cartItems = [];
+
+        fetch("/products")
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            products = data;
+            renderProducts();
+          })
+          .catch((error) => {
+            console.error("Error fetching products:", error);
+          });
+
+        productForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const name = document.getElementById("name").value;
+          const price = document.getElementById("price").value;
+          const description = document.getElementById("description").value;
+          const quantity = document.getElementById("quantity").value;
+
+          const product = { name, price, description, quantity };
+
+          fetch("/products", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(product),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json(); // แปลงข้อมูลเป็น JSON
+            })
+            .then((data) => {
+              products.push(data);
+              renderProducts();
+              productForm.reset();
+            })
+            .catch((error) => {
+              console.error("Error adding product:", error);
             });
-        
-            function renderProducts() {
-                productList.innerHTML = '';
-                products.forEach(product => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
+        });
+
+        viewCartBtn.addEventListener("click", function () {
+          cart.classList.remove("hidden");
+          renderCart();
+        });
+
+        closeCartBtn.addEventListener("click", function () {
+          cart.classList.add("hidden");
+        });
+
+        function renderProducts() {
+          productList.innerHTML = "";
+          products.forEach((product) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
                         ${product.name} - ${product.price} - ${product.quantity}  </br>
                         ${product.description}
                         <button data-id="${product.id}" class="edit-btn">Edit</button>
                         <button data-id="${product.id}" class="delete-btn">Delete</button>
+                        <button data-id="${product.id}" class="add-to-cart-btn">Add to Cart</button>
                     `;
-                    productList.appendChild(li);
-                });
-        
-                document.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const id = this.getAttribute('data-id');
-                        const product = products.find(p => p.id == id);
-                        document.getElementById('name').value = product.name;
-                        document.getElementById('price').value = product.price;
-                        document.getElementById('quantity').value = product.quantity;
-                        document.getElementById('description').value = product.description;
-                        fetch(`/products/${id}`, { method: 'DELETE' });
-                        products = products.filter(p => p.id != id);
-                        renderProducts();
-                    });
-                });
-        
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const id = this.getAttribute('data-id');
-                        fetch(`/products/${id}`, { method: 'DELETE' });
-                        products = products.filter(p => p.id != id);
-                        renderProducts();
-                    });
-                });
-            }
-        });        
+            productList.appendChild(li);
+          });
 
+          document.querySelectorAll(".edit-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              const product = products.find((p) => p.id == id);
+              document.getElementById("name").value = product.name;
+              document.getElementById("price").value = product.price;
+              document.getElementById("quantity").value = product.quantity;
+              document.getElementById("description").value =
+                product.description;
+              fetch(`/products/${id}`, { method: "DELETE" });
+              products = products.filter((p) => p.id != id);
+              renderProducts();
+            });
+          });
+
+          document.querySelectorAll(".delete-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              fetch(`/products/${id}`, { method: "DELETE" });
+              products = products.filter((p) => p.id != id);
+              renderProducts();
+            });
+          });
+
+          document.querySelectorAll(".add-to-cart-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              const product = products.find((p) => p.id == id);
+              cartItems.push(product);
+              renderCart();
+            });
+          });
+        }
+
+        function renderCart() {
+          cartList.innerHTML = "";
+          cartItems.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = `${item.name} - ${item.price}`;
+            cartList.appendChild(li);
+          });
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

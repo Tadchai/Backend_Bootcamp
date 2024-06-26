@@ -55,3 +55,13 @@ li {
 li button {
     margin-left: 10px;
 }
+
+.hidden {
+    display: none;
+}
+
+#cart {
+    margin-top: 20px;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+}
