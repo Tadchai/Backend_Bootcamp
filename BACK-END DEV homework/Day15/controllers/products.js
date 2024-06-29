@@ -15,18 +15,19 @@ exports.getAllProducts = async (req, res) => {
 });
 };
 
-exports.insertProduct = async  (req, res) => {
-  const { name, price, description, quantity } = req.body;
+exports.insertProduct = async (req, res) => {
+  const { Product_Name, Price, Description, Quantity } = req.body;
   const query = 'INSERT INTO Products (Product_Name, Price, Description, Quantity) VALUES (?, ?, ?, ?)';
-  db.query(query, [name, price, description, quantity], (err, result) => {
+  db.query(query, [Product_Name, Price, Description, Quantity], (err, result) => {
     if (err) {
       console.error('Error inserting product:', err);
       res.status(500).json({ error: 'Failed to insert product' });
       return;
     }
-    res.json({ id: result.insertId, name, price, description, quantity });
+    res.json({ id: result.insertId, Product_Name, Price, Description, Quantity });
   });
 };
+
 
 
 exports.updateProduct = async  (req, res) => {
@@ -56,3 +57,31 @@ exports.deleteProduct = async  (req, res) => {
   });
 };
 
+//Orders
+exports.insertOrder = async (req, res) => {
+  const { order_date, order_status, product_id, user_id } = req.body;
+  const sql = 'INSERT INTO Orders (Order_Date, Order_Status, Product_ID, User_ID) VALUES (?, ?, ?, ?)';
+  
+  db.query(sql, [order_date, order_status, product_id, user_id], (err, result) => {
+    if (err) {
+      console.error('Error inserting order:', err);
+      res.status(500).send('Error inserting order');
+      return;
+    }
+    res.status(201).send({ order_id: result.insertId });
+  });
+};
+
+exports.getOrderById = async (req, res) => {
+  const { id } = req.params;
+  const sql = 'SELECT * FROM Orders WHERE Order_ID = ?';
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error('Error fetching order:', err);
+      res.status(500).send('Error fetching order');
+      return;
+    }
+    res.status(200).send(result[0]);
+  });
+};
