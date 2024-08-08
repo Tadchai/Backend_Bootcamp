@@ -30,6 +30,32 @@ async function sendOTPViaEmail(email, otp) {
     }
 }
 
+// Send noti product by Email
+async function sendNotiEmail(email, otp) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.MYGMAIL,
+            pass: process.env.MYPASS,
+        },
+    });
+
+    const mailOptions = {
+        from: process.env.MYGMAIL,
+        to: email,
+        subject: 'OTP Verification',
+        text: `มีสินค้าที่คุณต้องการมาแล้วนะ`,
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent: ' + info.response);
+    } catch (error) {
+        console.error('Error sending email:', error);
+        throw error;
+    }
+}
+
 function generateOTP(secret) {
     return speakeasy.totp({
         secret: secret,
@@ -71,7 +97,21 @@ exports.SendOTP = async (req, res) =>{
         res.status(500).json({ error: 'Failed to send OTP' });
     }
   };
+
+  exports.SendNoti = async (req, res) =>{
+    const { email } = req.body;
+    const secret = speakeasy.generateSecret().base32;
+    otpSecrets[email] = secret; // เก็บ OTP secret ของผู้ใช้
   
+    try{
+        await sendNotiEmail(email);
+        //res.redirect(200,'/repassword');
+        //res.status(200).json({ message: 'OTP sent successfully' });
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        res.status(500).json({ error: 'Failed to send OTP' });
+    }
+  };
   //confirm OTP
   exports.VerifyOTP= async (req, res) => {
     const { email, otp } = req.body;
