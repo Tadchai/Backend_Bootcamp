@@ -44,7 +44,7 @@ async function sendNotiEmail(email, otp) {
         from: process.env.MYGMAIL,
         to: email,
         subject: 'OTP Verification',
-        text: `มีสินค้าที่คุณต้องการมาแล้วนะ`,
+        text: `สินค้าที่คุณกดติดตามไว้ ตอนนี้ต้องการมาแล้วนะ`,
     };
 
     try {
@@ -77,10 +77,6 @@ function verifyOTP(email, otp) {
     });
 }
 
-function storeOTPSecret(email, secret) {
-    otpSecrets[email] = secret;
-}
-
 // OTP to Email
 exports.SendOTP = async (req, res) =>{
     const { email } = req.body;
@@ -91,27 +87,29 @@ exports.SendOTP = async (req, res) =>{
     try{
         await sendOTPViaEmail(email, otp);
         //res.redirect(200,'/repassword');
-        //res.status(200).json({ message: 'OTP sent successfully' });
+        res.status(200).json({ message: 'OTP sent successfully' });
     } catch (error) {
         console.error('Error sending OTP:', error);
         res.status(500).json({ error: 'Failed to send OTP' });
     }
   };
 
+// Noti to Email
   exports.SendNoti = async (req, res) =>{
     const { email } = req.body;
     const secret = speakeasy.generateSecret().base32;
-    otpSecrets[email] = secret; // เก็บ OTP secret ของผู้ใช้
+    otpSecrets[email] = secret; 
   
     try{
         await sendNotiEmail(email);
         //res.redirect(200,'/repassword');
-        //res.status(200).json({ message: 'OTP sent successfully' });
+        res.status(200).json({ message: 'Noti sent successfully' });
     } catch (error) {
-        console.error('Error sending OTP:', error);
-        res.status(500).json({ error: 'Failed to send OTP' });
+        console.error('Error sending Noti:', error);
+        res.status(500).json({ error: 'Failed to send Noti' });
     }
   };
+
   //confirm OTP
   exports.VerifyOTP= async (req, res) => {
     const { email, otp } = req.body;
@@ -120,7 +118,7 @@ exports.SendOTP = async (req, res) =>{
     if (isValid) {
         res.status(200).json({ message: 'OTP verification successful' });
     } else {
-        res.status(400).json({ error: `Invalid OTP ${email},${otp}` });
+        res.status(400).json({ error: `Invalid OTP` });
     }
   };
 
@@ -148,7 +146,7 @@ exports.NewPassword = async (req, res) => {
                 }
 
                 if (result.affectedRows === 0) {
-                    return res.status(404).json({ message: `User not found. ${username}${newPassword}${confirmPassword}` });
+                    return res.status(404).json({ message: `User not found.` });
                 }
 
                 res.status(200).json({ message: "Password updated successfully." });

@@ -15,6 +15,24 @@ const options = {
         description: "Development server",
       },
     ],
+    tags: [
+      {
+        name: "Products",
+        description: "APIs related to product management",
+      },
+      {
+        name: "Login",
+        description: "APIs related to user login",
+      },
+      {
+        name: "Authentication",
+        description: "APIs related to authentication with google and facebook",
+      },
+      {
+        name: "Repassword",
+        description: "APIs related to repassword authentication ",
+      },
+    ],
     components: {
       schemas: {
         Products: {
@@ -31,7 +49,7 @@ const options = {
             Product_Name: { type: "string", description: "The product name" },
             Description: { type: "string", description: "The product description" },
             Price: { type: "integer", description: "The product price" },
-            Quantity: { type: "string", description: "The product quantity" },
+            Quantity: { type: "integer", description: "The product quantity" },
           },
         },
 

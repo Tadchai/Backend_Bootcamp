@@ -1,5 +1,6 @@
 const db = require("../db");
 
+//Products
 exports.getAllProducts = async (req, res) => {
   const query = 'SELECT * FROM Products';
   
@@ -94,15 +95,15 @@ exports.deleteProduct = async (req, res) => {
 
 //Orders
 exports.insertOrder = async (req, res) => {
-  const { order_date, order_status, product_id, user_id } = req.body;
+  const { Order_Date, Order_Status, Product_ID, User_ID } = req.body;
 
-  if (!order_date || !order_status || !product_id || !user_id) {
-    return res.status(400).json({ error: 'Invalid request. All fields are required.' });
+  if (!Order_Date || !Order_Status || !Product_ID || !User_ID) {
+    return res.status(400).json({ error: 'Invalid request. All fields are required.'});
   }
 
   const sql = 'INSERT INTO Orders (Order_Date, Order_Status, Product_ID, User_ID) VALUES (?, ?, ?, ?)';
   
-  db.query(sql, [order_date, order_status, product_id, user_id], (err, result) => {
+  db.query(sql, [Order_Date, Order_Status, Product_ID, User_ID], (err, result) => {
     if (err) {
       console.error('Error inserting order:', err);
       return res.status(500).json({ error: 'Failed to insert order' });
@@ -117,7 +118,7 @@ exports.insertOrder = async (req, res) => {
 
 exports.getOrderById = async (req, res) => {
   const { id } = req.params;
-  const sql = 'SELECT * FROM Orders WHERE Order_ID = ?';
+  const sql = 'SELECT * FROM Orders WHERE Ordes_ID = ?';
 
   db.query(sql, [id], (err, result) => {
     if (err) {

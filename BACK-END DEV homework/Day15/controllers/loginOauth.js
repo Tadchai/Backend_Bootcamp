@@ -2,8 +2,6 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const { Sequelize, DataTypes } = require('sequelize');
-// const dotenv = require('dotenv');
-// dotenv.config();
 
 const sequelize = new Sequelize(process.env.DB_DATABASE, process.env.DB_USER, process.env.DB_PASSWORD, {
     host: process.env.DB_HOST,
@@ -27,19 +25,25 @@ const User = sequelize.define('User', {
 // เส้นทางสำหรับเริ่มต้นการล็อกอินด้วย Google
 exports.AuthGoogle = (req, res, next) => {
     passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
-  };
+};
   
-  // เส้นทางสำหรับการเรียกกลับหลังจากล็อกอินสำเร็จ
-  exports.AuthGoogleCallback = (req, res, next) => {
+// เส้นทางสำหรับการเรียกกลับหลังจากล็อกอินสำเร็จ
+exports.AuthGoogleCallback = (req, res, next) => {
     passport.authenticate('google', { failureRedirect: '/' }, (err, user, info) => {
-      if (err) { return next(err); }
-      if (!user) { return res.redirect('/'); }
-      req.logIn(user, function(err) {
-        if (err) { return next(err); }
-        return res.redirect('/home');
-      });
+        if (err) { 
+            return res.status(500).json({ message: 'An error occurred during Google login process', error: err });
+        }
+        if (!user) { 
+            return res.status(401).json({ message: 'No user found matching Google credentials' });
+        }
+        req.logIn(user, function(err) {
+            if (err) { 
+                return res.status(500).json({ message: 'An error occurred during login', error: err });
+            }
+            return res.status(200).json({ message: 'Google login successful', user });
+        });
     })(req, res, next);
-  };
+};
 
 // เส้นทางสำหรับเริ่มต้นการล็อกอินด้วย Facebook
 exports.AuthFacebook = (req, res, next) => {
@@ -49,12 +53,18 @@ exports.AuthFacebook = (req, res, next) => {
 // เส้นทางสำหรับการเรียกกลับหลังจากล็อกอินสำเร็จ
 exports.AuthFacebookCallback = (req, res, next) => {
     passport.authenticate('facebook', { failureRedirect: '/' }, (err, user, info) => {
-      if (err) { return next(err); }
-      if (!user) { return res.redirect('/'); }
-      req.logIn(user, function(err) {
-        if (err) { return next(err); }
-        return res.redirect('/home');
-      });
+        if (err) { 
+            return res.status(500).json({ message: 'An error occurred during Facebook login process', error: err });
+        }
+        if (!user) { 
+            return res.status(401).json({ message: 'No user found matching Facebook credentials' });
+        }
+        req.logIn(user, function(err) {
+            if (err) { 
+                return res.status(500).json({ message: 'An error occurred during login', error: err });
+            }
+            return res.status(200).json({ message: 'Facebook login successful', user });
+        });
     })(req, res, next);
 };
 

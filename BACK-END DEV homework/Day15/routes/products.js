@@ -14,6 +14,7 @@ const {
  * /products:
  *  get:
  *     summary: Get all products
+ *     tags: [Products]
  *     description: Get all products
  *     responses:
  *       200:
@@ -34,6 +35,7 @@ router.get("/", getAllProducts);
  * /products:
  *  post:
  *     summary: Insert a new product
+ *     tags: [Products]
  *     description: Insert a new product
  *     requestBody:
  *       required: true
@@ -56,6 +58,7 @@ router.get("/", getAllProducts);
  * /products/{id}:
  *  put:
  *     summary: Update a product by id
+ *     tags: [Products]
  *     description: Update a product by id
  *     parameters:
  *       - in: path
@@ -87,6 +90,7 @@ router.get("/", getAllProducts);
  * /products/{id}:
  *  delete:
  *     summary: Delete a product by id
+ *     tags: [Products]
  *     description: Delete a product by id
  *     parameters:
  *       - in: path
@@ -105,11 +109,12 @@ router.get("/", getAllProducts);
  */
  router.delete("/:id", deleteProduct);
 
- /**
+/**
  * @swagger
  * /products/orders:
  *  post:
  *     summary: Insert a new order
+ *     tags: [Products]
  *     description: Insert a new order
  *     requestBody:
  *       required: true
@@ -132,6 +137,7 @@ router.get("/", getAllProducts);
  * /products/orders/{id}:
  *  get:
  *     summary: Get a order by id
+ *     tags: [Products]
  *     description: Get a order by id
  *     parameters:
  *       - in: path
