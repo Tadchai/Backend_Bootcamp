@@ -60,7 +60,7 @@ function generateOTP(secret) {
     return speakeasy.totp({
         secret: secret,
         encoding: process.env.ENCODE,
-        step: 120,
+        step: 600,//วินาที
     });
 }
 
@@ -73,7 +73,7 @@ function verifyOTP(email, otp) {
         secret: secret,
         encoding: process.env.ENCODE,
         token: otp,
-        step: 120,
+        step: 600,
     });
 }
 
