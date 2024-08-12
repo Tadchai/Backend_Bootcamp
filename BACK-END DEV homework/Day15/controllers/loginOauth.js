@@ -1,7 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
-const db = require("../db");
 const { Sequelize, DataTypes } = require('sequelize');
 // const dotenv = require('dotenv');
 // dotenv.config();
