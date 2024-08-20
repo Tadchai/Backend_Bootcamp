@@ -45,7 +45,7 @@ app.post('/register', async (req, res) => {
 });
 
 //login
-app.post('/login', async (req, res) => {
+app.post('/login', checkCache, async (req, res) => {
     const client = new MongoClient(uri);
     try {
         await client.connect();
@@ -109,7 +109,7 @@ app.post('/products', async (req, res) => {
 });
 
 // ค้นหาสินค้าโดยใช้ ID
-app.get('/products/:id', async (req, res) => {
+app.get('/products/:id', checkCache, async (req, res) => {
     const client = new MongoClient(uri);
     try {
         await client.connect();
@@ -120,6 +120,8 @@ app.get('/products/:id', async (req, res) => {
         const product = await collection.findOne({ _id: new ObjectId(id) });
 
         if (product) {
+            // เก็บข้อมูลสินค้าใน Redis
+            redisClient.set(id, JSON.stringify(product), { EX: 3600 });
             res.send(product);
         } else {
             res.status(404).send({ message: 'Product not found' });
@@ -131,6 +133,7 @@ app.get('/products/:id', async (req, res) => {
         await client.close();
     }
 });
+
 
 
 
