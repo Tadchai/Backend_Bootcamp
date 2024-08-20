@@ -1,143 +1,145 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const { MongoClient, ObjectId } = require('mongodb');
+const redis = require('redis');
+const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const redis = require('redis');
-require('dotenv').config();
-
 const uri = "mongodb://localhost:27017";
 const app = express();
-const redisClient = redis.createClient();
+const PORT = 3000;
+const REDIS_PORT = 6379;
 
-app.use(bodyParser.json());
+// สร้าง Redis client และเชื่อมต่อ
+const client = redis.createClient(REDIS_PORT);
 
-// ฟังก์ชันเช็คข้อมูลใน Redis
-const checkCache = (req, res, next) => {
-    const { id } = req.params;
-    redisClient.get(id, (err, data) => {
-        if (err) throw err;
-        if (data) {
-            res.send(JSON.parse(data));
-        } else {
-            next();
-        }
-    });
-};
+client.on('error', (err) => {
+    console.error('Redis Client Error', err);
+});
 
-//register
+client.connect().then(() => {
+    console.log('Connected to Redis');
+}).catch(err => {
+    console.error('Could not connect to Redis', err);
+});
+
+// สร้าง MongoDB client
+const mongo = new MongoClient(uri);
+
+mongo.connect().then(() => {
+    console.log('Connected to MongoDB');
+}).catch(err => {
+    console.error('Error connecting to MongoDB:', err);
+});
+
+app.use(express.json());
+
+const User = mongo.db("mydb").collection("users");
+const Product = mongo.db("mydb").collection("products");
+
+// ฟังก์ชันสมัครสมาชิก
 app.post('/register', async (req, res) => {
-    const client = new MongoClient(uri);
     try {
-        await client.connect();
-        const database = client.db('mydb');
-        const collection = database.collection('users');
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const user = { username: req.body.username, password: hashedPassword };
-        const result = await collection.insertOne(user);
-        res.send(result);
-    } catch (error) {
-        console.log(error);
-        res.send({ error: 'An error has occurred' });
-    } finally {
-        await client.close();
+        const { username, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = { username, password: hashedPassword };
+        const result = await User.insertOne(newUser);
+        res.status(201).send({ message: 'User registered successfully', userId: result.insertedId });
+    } catch (err) {
+        console.error('Error registering user', err);
+        res.status(500).send('Error registering user');
     }
 });
 
-//login
-app.post('/login', checkCache, async (req, res) => {
-    const client = new MongoClient(uri);
+// ฟังก์ชันเข้าสู่ระบบ
+app.post('/login', async (req, res) => {
     try {
-        await client.connect();
-        const database = client.db('mydb');
-        const collection = database.collection('users');
-        const user = await collection.findOne({ username: req.body.username });
-        if (user && await bcrypt.compare(req.body.password, user.password)) {
-            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-            // เก็บข้อมูล user ใน Redis
-            redisClient.set(user._id.toString(), 3600, JSON.stringify(user));
-
+        const { username, password } = req.body;
+        const user = await User.findOne({ username });
+        if (user && await bcrypt.compare(password, user.password)) {
+            const token = jwt.sign({ id: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
             res.send({ message: 'Login successful', token });
         } else {
-            res.status(401).send({ message: 'Login failed' });
+            res.status(401).send('Invalid username or password');
         }
-    } catch (error) {
-        console.log(error);
-        res.status(500).send({ error: 'An error has occurred' });
-    } finally {
-        await client.close();
+    } catch (err) {
+        console.error('Error logging in', err);
+        res.status(500).send('Error logging in');
     }
 });
 
-// ดูรายการสินค้า
+// ฟังก์ชันดูรายการสินค้า
 app.get('/products', async (req, res) => {
-    const client = new MongoClient(uri);
     try {
-        await client.connect();
-        const database = client.db('mydb');
-        const collection = database.collection('products');
-        const products = await collection.find().toArray();
+        const products = await Product.find().toArray();
         res.send(products);
-    } catch (error) {
-        console.log(error);
-        res.send({ error: 'An error has occurred' });
-    } finally {
-        await client.close();
+    } catch (err) {
+        console.error('Error fetching products', err);
+        res.status(500).send('Error fetching products');
     }
 });
 
-// เพิ่มสินค้า
+// ฟังก์ชันเพิ่มรายการสินค้า
 app.post('/products', async (req, res) => {
-    const client = new MongoClient(uri);
     try {
-        await client.connect();
-        const database = client.db('mydb');
-        const collection = database.collection('products');
-        const product = {
-            name: req.body.name,
-            price: req.body.price,
-        };
-        const result = await collection.insertOne(product);
-        res.send(result);
-    } catch (error) {
-        console.log(error);
-        res.status(500).send({ error: 'An error has occurred' });
-    } finally {
-        await client.close();
+        const { name, price } = req.body;
+        const newProduct = { name, price };
+        const result = await Product.insertOne(newProduct);
+        res.status(201).send({ message: 'Product added successfully', productId: result.insertedId });
+    } catch (err) {
+        console.error('Error adding product', err);
+        res.status(500).send('Error adding product');
     }
 });
 
-// ค้นหาสินค้าโดยใช้ ID
-app.get('/products/:id', checkCache, async (req, res) => {
-    const client = new MongoClient(uri);
+// ฟังก์ชันค้นหารายการสินค้า
+app.get('/products/:id', async (req, res) => {
+    const productId = req.params.id;
+    const redisKey = `product:${productId}`;
+
     try {
-        await client.connect();
-        const database = client.db('mydb');
-        const collection = database.collection('products');
+        const cachedData = await client.get(redisKey);
 
-        const { id } = req.params;
-        const product = await collection.findOne({ _id: new ObjectId(id) });
-
-        if (product) {
-            // เก็บข้อมูลสินค้าใน Redis
-            redisClient.set(id, JSON.stringify(product), { EX: 3600 });
-            res.send(product);
+        if (cachedData) {
+            return res.send(JSON.parse(cachedData));
         } else {
-            res.status(404).send({ message: 'Product not found' });
+            const product = await Product.findOne({ _id: new ObjectId(productId) });
+
+            if (product) {
+                await client.setEx(redisKey, 3600, JSON.stringify(product));
+                return res.send(product);
+            } else {
+                return res.status(404).send('Product not found');
+            }
         }
-    } catch (error) {
-        console.log(error);
-        res.status(500).send({ error: 'An error has occurred' });
-    } finally {
-        await client.close();
+    } catch (err) {
+        console.error('Error fetching product or caching', err);
+        return res.status(500).send('Internal Server Error');
     }
 });
 
+//ตัวอย่าง
+app.get('/user/:username', async (req, res) => {
+    const username = req.params.username;                     
+    const redisKey = `user:${username}`; 
+    try {
+      const cachedData = await client.get(redisKey);
+  
+      if (cachedData) {
+        // มี cache = ใช้ cache ก่อนไปเลย
+        return res.send(JSON.parse(cachedData));
+      }else{
+        // User data not found in cache, fetch from MySQL
+        const user = await User.findOne({ username: username });
+        // Store user data in Redis cache
+        await client.set(redisKey, JSON.stringify(user));
+        //await client.setEx(redisKey, 3600, JSON.stringify(user));
+        res.json(user);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ error: "An error occurred" });
+    }
+  });
 
-
-
-
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.listen(PORT, () => {
+    console.log(`Server is running on port http://localhost:${PORT}`);
 });
